@@ -1,0 +1,329 @@
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { CheckCircle, Package, MapPin } from 'lucide-react-native';
+import React from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+import Colors from '@/constants/colors';
+
+export default function OrderSuccessScreen() {
+  const router = useRouter();
+  const params = useLocalSearchParams();
+
+  const {
+    orderId,
+    paymentId,
+    total,
+    name,
+    address,
+    city,
+    state,
+    pincode,
+  } = params;
+
+  return (
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
+        <View style={styles.successIcon}>
+          <CheckCircle size={80} color={Colors.success} strokeWidth={2} />
+        </View>
+
+        <Text style={styles.successTitle}>Order Placed Successfully!</Text>
+        <Text style={styles.successMessage}>
+          Thank you for your purchase. Your order has been confirmed and will be
+          delivered soon.
+        </Text>
+
+        <View style={styles.orderCard}>
+          <View style={styles.orderHeader}>
+            <Package size={24} color={Colors.primary} />
+            <Text style={styles.orderHeaderTitle}>Order Details</Text>
+          </View>
+
+          <View style={styles.orderRow}>
+            <Text style={styles.orderLabel}>Order ID</Text>
+            <Text style={styles.orderValue}>{orderId}</Text>
+          </View>
+
+          <View style={styles.orderRow}>
+            <Text style={styles.orderLabel}>Payment ID</Text>
+            <Text style={styles.orderValue}>{paymentId}</Text>
+          </View>
+
+          <View style={styles.orderRow}>
+            <Text style={styles.orderLabel}>Total Amount</Text>
+            <Text style={styles.orderValuePrice}>
+              ₹{total ? Math.round(parseFloat(total as string)) : 0}
+            </Text>
+          </View>
+
+          <View style={styles.orderRow}>
+            <Text style={styles.orderLabel}>Status</Text>
+            <View style={styles.statusBadge}>
+              <Text style={styles.statusText}>Confirmed</Text>
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.addressCard}>
+          <View style={styles.addressHeader}>
+            <MapPin size={24} color={Colors.primary} />
+            <Text style={styles.addressHeaderTitle}>Delivery Address</Text>
+          </View>
+
+          <Text style={styles.addressName}>{name}</Text>
+          <Text style={styles.addressText}>
+            {address}
+          </Text>
+          <Text style={styles.addressText}>
+            {city}, {state} - {pincode}
+          </Text>
+        </View>
+
+        <View style={styles.timelineCard}>
+          <Text style={styles.timelineTitle}>Order Timeline</Text>
+
+          <View style={styles.timelineItem}>
+            <View style={styles.timelineDot} />
+            <View style={styles.timelineContent}>
+              <Text style={styles.timelineLabel}>Order Placed</Text>
+              <Text style={styles.timelineDate}>
+                {new Date().toLocaleString('en-IN', {
+                  day: 'numeric',
+                  month: 'short',
+                  year: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })}
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.timelineItem}>
+            <View style={[styles.timelineDot, styles.timelineDotInactive]} />
+            <View style={styles.timelineContent}>
+              <Text style={[styles.timelineLabel, styles.timelineLabelInactive]}>
+                Processing
+              </Text>
+              <Text style={styles.timelineDate}>Expected in 1-2 hours</Text>
+            </View>
+          </View>
+
+          <View style={styles.timelineItem}>
+            <View style={[styles.timelineDot, styles.timelineDotInactive]} />
+            <View style={styles.timelineContent}>
+              <Text style={[styles.timelineLabel, styles.timelineLabelInactive]}>
+                Shipped
+              </Text>
+              <Text style={styles.timelineDate}>Expected in 1-2 days</Text>
+            </View>
+          </View>
+
+          <View style={[styles.timelineItem, styles.timelineItemLast]}>
+            <View style={[styles.timelineDot, styles.timelineDotInactive]} />
+            <View style={styles.timelineContent}>
+              <Text style={[styles.timelineLabel, styles.timelineLabelInactive]}>
+                Delivered
+              </Text>
+              <Text style={styles.timelineDate}>Expected in 3-5 days</Text>
+            </View>
+          </View>
+        </View>
+      </ScrollView>
+
+      <View style={styles.footer}>
+        <TouchableOpacity
+          style={styles.continueButton}
+          onPress={() => router.replace('/(tabs)')}
+        >
+          <Text style={styles.continueButtonText}>Continue Shopping</Text>
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: Colors.background,
+  },
+  scrollContent: {
+    paddingHorizontal: 20,
+    paddingTop: 40,
+    paddingBottom: 20,
+  },
+  successIcon: {
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  successTitle: {
+    fontSize: 26,
+    fontWeight: '700' as const,
+    color: Colors.text,
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  successMessage: {
+    fontSize: 15,
+    color: Colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 32,
+  },
+  orderCard: {
+    backgroundColor: Colors.white,
+    padding: 20,
+    borderRadius: 16,
+    marginBottom: 16,
+  },
+  orderHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 20,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+  },
+  orderHeaderTitle: {
+    fontSize: 18,
+    fontWeight: '700' as const,
+    color: Colors.text,
+  },
+  orderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 14,
+  },
+  orderLabel: {
+    fontSize: 14,
+    color: Colors.textSecondary,
+  },
+  orderValue: {
+    fontSize: 14,
+    fontWeight: '600' as const,
+    color: Colors.text,
+  },
+  orderValuePrice: {
+    fontSize: 16,
+    fontWeight: '700' as const,
+    color: Colors.primary,
+  },
+  statusBadge: {
+    backgroundColor: Colors.successLight,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  statusText: {
+    fontSize: 13,
+    fontWeight: '600' as const,
+    color: Colors.success,
+  },
+  addressCard: {
+    backgroundColor: Colors.white,
+    padding: 20,
+    borderRadius: 16,
+    marginBottom: 16,
+  },
+  addressHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 16,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+  },
+  addressHeaderTitle: {
+    fontSize: 18,
+    fontWeight: '700' as const,
+    color: Colors.text,
+  },
+  addressName: {
+    fontSize: 16,
+    fontWeight: '600' as const,
+    color: Colors.text,
+    marginBottom: 6,
+  },
+  addressText: {
+    fontSize: 14,
+    color: Colors.textSecondary,
+    lineHeight: 20,
+  },
+  timelineCard: {
+    backgroundColor: Colors.white,
+    padding: 20,
+    borderRadius: 16,
+  },
+  timelineTitle: {
+    fontSize: 18,
+    fontWeight: '700' as const,
+    color: Colors.text,
+    marginBottom: 20,
+  },
+  timelineItem: {
+    flexDirection: 'row',
+    paddingBottom: 24,
+  },
+  timelineItemLast: {
+    paddingBottom: 0,
+  },
+  timelineDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: Colors.success,
+    marginTop: 4,
+    marginRight: 16,
+  },
+  timelineDotInactive: {
+    backgroundColor: Colors.border,
+  },
+  timelineContent: {
+    flex: 1,
+  },
+  timelineLabel: {
+    fontSize: 15,
+    fontWeight: '600' as const,
+    color: Colors.text,
+    marginBottom: 4,
+  },
+  timelineLabelInactive: {
+    color: Colors.textLight,
+  },
+  timelineDate: {
+    fontSize: 13,
+    color: Colors.textSecondary,
+  },
+  footer: {
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 16,
+    backgroundColor: Colors.white,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
+  },
+  continueButton: {
+    backgroundColor: Colors.primary,
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  continueButtonText: {
+    fontSize: 17,
+    fontWeight: '600' as const,
+    color: Colors.white,
+  },
+});

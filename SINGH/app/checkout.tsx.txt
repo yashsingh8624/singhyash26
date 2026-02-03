@@ -1,0 +1,402 @@
+import { useRouter } from 'expo-router';
+import { ArrowLeft, MapPin } from 'lucide-react-native';
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
+  Alert,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+import Colors from '@/constants/colors';
+import { useCart } from '@/contexts/CartContext';
+
+export default function CheckoutScreen() {
+  const router = useRouter();
+  const { cart, total } = useCart();
+  const [formData, setFormData] = useState({
+    name: '',
+    phone: '',
+    email: '',
+    address: '',
+    city: '',
+    state: '',
+    pincode: '',
+  });
+
+  const handleInputChange = (field: string, value: string) => {
+    setFormData({ ...formData, [field]: value });
+  };
+
+  const validateForm = () => {
+    if (!formData.name.trim()) {
+      Alert.alert('Error', 'Please enter your name');
+      return false;
+    }
+    if (!formData.phone.trim() || formData.phone.length < 10) {
+      Alert.alert('Error', 'Please enter a valid phone number');
+      return false;
+    }
+    if (!formData.email.trim() || !formData.email.includes('@')) {
+      Alert.alert('Error', 'Please enter a valid email');
+      return false;
+    }
+    if (!formData.address.trim()) {
+      Alert.alert('Error', 'Please enter your address');
+      return false;
+    }
+    if (!formData.city.trim()) {
+      Alert.alert('Error', 'Please enter your city');
+      return false;
+    }
+    if (!formData.state.trim()) {
+      Alert.alert('Error', 'Please enter your state');
+      return false;
+    }
+    if (!formData.pincode.trim() || formData.pincode.length !== 6) {
+      Alert.alert('Error', 'Please enter a valid 6-digit pincode');
+      return false;
+    }
+    return true;
+  };
+
+  const handleProceedToPayment = () => {
+    if (validateForm()) {
+      router.push({
+        pathname: '/payment',
+        params: {
+          ...formData,
+          total: total.toString(),
+        },
+      });
+    }
+  };
+
+  if (cart.length === 0) {
+    router.replace('/(tabs)/cart');
+    return null;
+  }
+
+  return (
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <View style={styles.header}>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={styles.backButton}
+        >
+          <ArrowLeft size={24} color={Colors.text} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Checkout</Text>
+        <View style={styles.placeholder} />
+      </View>
+
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.keyboardView}
+      >
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          style={styles.scrollView}
+        >
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <MapPin size={20} color={Colors.primary} />
+              <Text style={styles.sectionTitle}>Delivery Address</Text>
+            </View>
+
+            <View style={styles.formGroup}>
+              <Text style={styles.label}>Full Name *</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Enter your full name"
+                placeholderTextColor={Colors.textLight}
+                value={formData.name}
+                onChangeText={(value) => handleInputChange('name', value)}
+              />
+            </View>
+
+            <View style={styles.formGroup}>
+              <Text style={styles.label}>Phone Number *</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Enter 10-digit phone number"
+                placeholderTextColor={Colors.textLight}
+                value={formData.phone}
+                onChangeText={(value) => handleInputChange('phone', value)}
+                keyboardType="phone-pad"
+                maxLength={10}
+              />
+            </View>
+
+            <View style={styles.formGroup}>
+              <Text style={styles.label}>Email Address *</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Enter your email"
+                placeholderTextColor={Colors.textLight}
+                value={formData.email}
+                onChangeText={(value) => handleInputChange('email', value)}
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
+            </View>
+
+            <View style={styles.formGroup}>
+              <Text style={styles.label}>Address *</Text>
+              <TextInput
+                style={[styles.input, styles.textArea]}
+                placeholder="House No., Building Name, Road Name, Area"
+                placeholderTextColor={Colors.textLight}
+                value={formData.address}
+                onChangeText={(value) => handleInputChange('address', value)}
+                multiline
+                numberOfLines={3}
+              />
+            </View>
+
+            <View style={styles.formRow}>
+              <View style={[styles.formGroup, styles.formGroupHalf]}>
+                <Text style={styles.label}>City *</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter city"
+                  placeholderTextColor={Colors.textLight}
+                  value={formData.city}
+                  onChangeText={(value) => handleInputChange('city', value)}
+                />
+              </View>
+
+              <View style={[styles.formGroup, styles.formGroupHalf]}>
+                <Text style={styles.label}>State *</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter state"
+                  placeholderTextColor={Colors.textLight}
+                  value={formData.state}
+                  onChangeText={(value) => handleInputChange('state', value)}
+                />
+              </View>
+            </View>
+
+            <View style={styles.formGroup}>
+              <Text style={styles.label}>Pincode *</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Enter 6-digit pincode"
+                placeholderTextColor={Colors.textLight}
+                value={formData.pincode}
+                onChangeText={(value) => handleInputChange('pincode', value)}
+                keyboardType="number-pad"
+                maxLength={6}
+              />
+            </View>
+          </View>
+
+          <View style={styles.orderSummary}>
+            <Text style={styles.summaryTitle}>Order Summary</Text>
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Items ({cart.length})</Text>
+              <Text style={styles.summaryValue}>₹{Math.round(total)}</Text>
+            </View>
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Delivery</Text>
+              <Text style={styles.summaryValueFree}>FREE</Text>
+            </View>
+            <View style={styles.divider} />
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabelTotal}>Total</Text>
+              <Text style={styles.summaryValueTotal}>₹{Math.round(total)}</Text>
+            </View>
+          </View>
+
+          <View style={styles.bottomSpacer} />
+        </ScrollView>
+      </KeyboardAvoidingView>
+
+      <View style={styles.footer}>
+        <View style={styles.footerContent}>
+          <View>
+            <Text style={styles.footerLabel}>Total Amount</Text>
+            <Text style={styles.footerTotal}>₹{Math.round(total)}</Text>
+          </View>
+          <TouchableOpacity
+            style={styles.paymentButton}
+            onPress={handleProceedToPayment}
+          >
+            <Text style={styles.paymentButtonText}>Proceed to Payment</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: Colors.background,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: Colors.white,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+  },
+  backButton: {
+    padding: 4,
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '700' as const,
+    color: Colors.text,
+  },
+  placeholder: {
+    width: 32,
+  },
+  keyboardView: {
+    flex: 1,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  section: {
+    backgroundColor: Colors.white,
+    marginTop: 16,
+    paddingHorizontal: 20,
+    paddingVertical: 20,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 20,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '700' as const,
+    color: Colors.text,
+  },
+  formGroup: {
+    marginBottom: 16,
+  },
+  formGroupHalf: {
+    flex: 1,
+  },
+  formRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: '600' as const,
+    color: Colors.text,
+    marginBottom: 8,
+  },
+  input: {
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 15,
+    color: Colors.text,
+  },
+  textArea: {
+    minHeight: 80,
+    textAlignVertical: 'top',
+  },
+  orderSummary: {
+    backgroundColor: Colors.white,
+    marginTop: 16,
+    paddingHorizontal: 20,
+    paddingVertical: 20,
+  },
+  summaryTitle: {
+    fontSize: 18,
+    fontWeight: '700' as const,
+    color: Colors.text,
+    marginBottom: 16,
+  },
+  summaryRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  summaryLabel: {
+    fontSize: 15,
+    color: Colors.textSecondary,
+  },
+  summaryValue: {
+    fontSize: 15,
+    fontWeight: '600' as const,
+    color: Colors.text,
+  },
+  summaryValueFree: {
+    fontSize: 15,
+    fontWeight: '600' as const,
+    color: Colors.success,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: Colors.border,
+    marginVertical: 12,
+  },
+  summaryLabelTotal: {
+    fontSize: 17,
+    fontWeight: '700' as const,
+    color: Colors.text,
+  },
+  summaryValueTotal: {
+    fontSize: 20,
+    fontWeight: '700' as const,
+    color: Colors.primary,
+  },
+  bottomSpacer: {
+    height: 20,
+  },
+  footer: {
+    backgroundColor: Colors.white,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
+  },
+  footerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+  },
+  footerLabel: {
+    fontSize: 13,
+    color: Colors.textSecondary,
+  },
+  footerTotal: {
+    fontSize: 20,
+    fontWeight: '700' as const,
+    color: Colors.primary,
+    marginTop: 2,
+  },
+  paymentButton: {
+    backgroundColor: Colors.primary,
+    paddingHorizontal: 28,
+    paddingVertical: 14,
+    borderRadius: 12,
+  },
+  paymentButtonText: {
+    fontSize: 16,
+    fontWeight: '600' as const,
+    color: Colors.white,
+  },
+});

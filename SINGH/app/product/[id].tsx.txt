@@ -1,0 +1,490 @@
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Image } from 'expo-image';
+import { Heart, ShoppingCart, Star } from 'lucide-react-native';
+import React, { useState, useRef } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Dimensions,
+  Animated,
+} from 'react-native';
+
+import Colors from '@/constants/colors';
+import { useCart } from '@/contexts/CartContext';
+import { products, seasonNames } from '@/mocks/products';
+import { Size } from '@/types';
+
+const { width } = Dimensions.get('window');
+const IMAGE_HEIGHT = 500;
+
+export default function ProductDetailScreen() {
+  const { id } = useLocalSearchParams();
+  const router = useRouter();
+  const { addToCart } = useCart();
+  const scrollX = useRef(new Animated.Value(0)).current;
+
+  const product = products.find((p) => p.id === id);
+  const [selectedSize, setSelectedSize] = useState<Size | null>(null);
+  const [selectedColor, setSelectedColor] = useState<string | null>(null);
+  const [isFavorite, setIsFavorite] = useState(false);
+
+  if (!product) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.errorText}>Product not found</Text>
+      </View>
+    );
+  }
+
+  const finalPrice = product.discount
+    ? product.price * (1 - product.discount / 100)
+    : product.price;
+
+  const handleAddToCart = () => {
+    if (!selectedSize || !selectedColor) {
+      return;
+    }
+    addToCart(product, selectedSize, selectedColor, 1);
+    router.push('/(tabs)/cart');
+  };
+
+  return (
+    <View style={styles.container}>
+      <ScrollView showsVerticalScrollIndicator={false}>
+        <View style={styles.imageContainer}>
+          <Animated.ScrollView
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            onScroll={Animated.event(
+              [{ nativeEvent: { contentOffset: { x: scrollX } } }],
+              { useNativeDriver: false },
+            )}
+            scrollEventThrottle={16}
+          >
+            {product.images.map((image, index) => (
+              <Image
+                key={index}
+                source={{ uri: image }}
+                style={styles.productImage}
+                contentFit="cover"
+              />
+            ))}
+          </Animated.ScrollView>
+
+          {product.images.length > 1 && (
+            <View style={styles.imagePagination}>
+              {product.images.map((_, index) => {
+                const inputRange = [
+                  (index - 1) * width,
+                  index * width,
+                  (index + 1) * width,
+                ];
+
+                const dotWidth = scrollX.interpolate({
+                  inputRange,
+                  outputRange: [8, 24, 8],
+                  extrapolate: 'clamp',
+                });
+
+                const opacity = scrollX.interpolate({
+                  inputRange,
+                  outputRange: [0.3, 1, 0.3],
+                  extrapolate: 'clamp',
+                });
+
+                return (
+                  <Animated.View
+                    key={index}
+                    style={[
+                      styles.imageDot,
+                      { width: dotWidth, opacity },
+                    ]}
+                  />
+                );
+              })}
+            </View>
+          )}
+
+          <TouchableOpacity
+            style={styles.favoriteButton}
+            onPress={() => setIsFavorite(!isFavorite)}
+          >
+            <Heart
+              size={24}
+              color={isFavorite ? Colors.error : Colors.text}
+              fill={isFavorite ? Colors.error : 'transparent'}
+            />
+          </TouchableOpacity>
+
+          {product.discount && (
+            <View style={styles.floatingDiscountBadge}>
+              <Text style={styles.floatingDiscountText}>{product.discount}% OFF</Text>
+            </View>
+          )}
+        </View>
+
+        <View style={styles.content}>
+          <View style={styles.headerSection}>
+            <View style={styles.seasonTag}>
+              <Text style={styles.seasonTagText}>{seasonNames[product.season]}</Text>
+            </View>
+            <View style={styles.ratingContainer}>
+              <Star size={16} color={Colors.accent} fill={Colors.accent} />
+              <Text style={styles.ratingText}>4.5</Text>
+            </View>
+          </View>
+
+          <Text style={styles.productName}>{product.name}</Text>
+
+          <View style={styles.priceContainer}>
+            <Text style={styles.price}>₹{Math.round(finalPrice)}</Text>
+            {product.discount && (
+              <>
+                <Text style={styles.originalPrice}>₹{product.price}</Text>
+                <View style={styles.discountBadge}>
+                  <Text style={styles.discountBadgeText}>Save ₹{Math.round(product.price - finalPrice)}</Text>
+                </View>
+              </>
+            )}
+          </View>
+
+          <Text style={styles.description}>{product.description}</Text>
+
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Select Size</Text>
+            <View style={styles.sizesContainer}>
+              {product.sizes.map((size) => {
+                const isSelected = selectedSize === size;
+                return (
+                  <TouchableOpacity
+                    key={size}
+                    style={[
+                      styles.sizeButton,
+                      isSelected && styles.sizeButtonActive,
+                    ]}
+                    onPress={() => setSelectedSize(size)}
+                  >
+                    <Text
+                      style={[
+                        styles.sizeButtonText,
+                        isSelected && styles.sizeButtonTextActive,
+                      ]}
+                    >
+                      {size}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Select Color</Text>
+            <View style={styles.colorsContainer}>
+              {product.colors.map((color) => {
+                const isSelected = selectedColor === color;
+                return (
+                  <TouchableOpacity
+                    key={color}
+                    style={[
+                      styles.colorButton,
+                      isSelected && styles.colorButtonActive,
+                    ]}
+                    onPress={() => setSelectedColor(color)}
+                  >
+                    <Text
+                      style={[
+                        styles.colorButtonText,
+                        isSelected && styles.colorButtonTextActive,
+                      ]}
+                    >
+                      {color}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+
+          <View style={styles.stockSection}>
+            <View style={styles.stockBadge}>
+              <View style={[
+                styles.stockDot,
+                { backgroundColor: product.stock > 50 ? Colors.success : Colors.error }
+              ]} />
+              <Text style={styles.stockText}>
+                {product.stock > 50 ? 'In Stock' : `Only ${product.stock} left`}
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.bottomSpacer} />
+      </ScrollView>
+
+      <View style={styles.footer}>
+        <TouchableOpacity
+          style={[
+            styles.addToCartButton,
+            (!selectedSize || !selectedColor) && styles.addToCartButtonDisabled,
+          ]}
+          onPress={handleAddToCart}
+          disabled={!selectedSize || !selectedColor}
+        >
+          <ShoppingCart size={22} color={Colors.white} />
+          <Text style={styles.addToCartButtonText}>
+            {!selectedSize || !selectedColor
+              ? 'Select Size & Color'
+              : 'Add to Cart'}
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: Colors.background,
+  },
+  imageContainer: {
+    height: IMAGE_HEIGHT,
+    backgroundColor: Colors.surface,
+    position: 'relative',
+  },
+  productImage: {
+    width: width,
+    height: IMAGE_HEIGHT,
+  },
+  imagePagination: {
+    position: 'absolute',
+    bottom: 20,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 6,
+  },
+  imageDot: {
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: Colors.white,
+  },
+  favoriteButton: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: Colors.white,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  floatingDiscountBadge: {
+    position: 'absolute',
+    top: 16,
+    left: 16,
+    backgroundColor: Colors.accent,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  floatingDiscountText: {
+    fontSize: 13,
+    fontWeight: '700' as const,
+    color: Colors.primary,
+  },
+  content: {
+    padding: 20,
+  },
+  headerSection: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  seasonTag: {
+    backgroundColor: Colors.surface,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  seasonTagText: {
+    fontSize: 12,
+    fontWeight: '600' as const,
+    color: Colors.textSecondary,
+  },
+  ratingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  ratingText: {
+    fontSize: 14,
+    fontWeight: '600' as const,
+    color: Colors.text,
+  },
+  productName: {
+    fontSize: 26,
+    fontWeight: '700' as const,
+    color: Colors.primary,
+    marginBottom: 16,
+  },
+  priceContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 20,
+  },
+  price: {
+    fontSize: 28,
+    fontWeight: '700' as const,
+    color: Colors.primary,
+  },
+  originalPrice: {
+    fontSize: 18,
+    color: Colors.textLight,
+    textDecorationLine: 'line-through' as const,
+  },
+  discountBadge: {
+    backgroundColor: Colors.success,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  discountBadgeText: {
+    fontSize: 12,
+    fontWeight: '600' as const,
+    color: Colors.white,
+  },
+  description: {
+    fontSize: 15,
+    lineHeight: 24,
+    color: Colors.textSecondary,
+    marginBottom: 28,
+  },
+  section: {
+    marginBottom: 28,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '700' as const,
+    color: Colors.text,
+    marginBottom: 16,
+  },
+  sizesContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  sizeButton: {
+    minWidth: 60,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 12,
+    backgroundColor: Colors.surface,
+    borderWidth: 2,
+    borderColor: Colors.border,
+    alignItems: 'center',
+  },
+  sizeButtonActive: {
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
+  },
+  sizeButtonText: {
+    fontSize: 15,
+    fontWeight: '600' as const,
+    color: Colors.text,
+  },
+  sizeButtonTextActive: {
+    color: Colors.white,
+  },
+  colorsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  colorButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 12,
+    backgroundColor: Colors.surface,
+    borderWidth: 2,
+    borderColor: Colors.border,
+  },
+  colorButtonActive: {
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
+  },
+  colorButtonText: {
+    fontSize: 14,
+    fontWeight: '600' as const,
+    color: Colors.text,
+  },
+  colorButtonTextActive: {
+    color: Colors.white,
+  },
+  stockSection: {
+    marginTop: 8,
+  },
+  stockBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  stockDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  stockText: {
+    fontSize: 14,
+    fontWeight: '600' as const,
+    color: Colors.textSecondary,
+  },
+  footer: {
+    backgroundColor: Colors.white,
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 16,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
+  },
+  addToCartButton: {
+    backgroundColor: Colors.primary,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+    paddingVertical: 16,
+    borderRadius: 12,
+  },
+  addToCartButtonDisabled: {
+    backgroundColor: Colors.textLight,
+  },
+  addToCartButtonText: {
+    fontSize: 17,
+    fontWeight: '600' as const,
+    color: Colors.white,
+  },
+  errorText: {
+    fontSize: 18,
+    color: Colors.error,
+    textAlign: 'center',
+    marginTop: 40,
+  },
+  bottomSpacer: {
+    height: 20,
+  },
+});

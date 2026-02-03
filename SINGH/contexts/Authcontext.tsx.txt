@@ -1,0 +1,86 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import createContextHook from '@nkzw/create-context-hook';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState, useEffect, useCallback } from 'react';
+
+import { User } from '@/types';
+
+const USER_STORAGE_KEY = '@user';
+
+export const [AuthContext, useAuth] = createContextHook(() => {
+  const [user, setUser] = useState<User | null>(null);
+  const queryClient = useQueryClient();
+
+  const userQuery = useQuery({
+    queryKey: ['user'],
+    queryFn: async () => {
+      const stored = await AsyncStorage.getItem(USER_STORAGE_KEY);
+      return stored ? JSON.parse(stored) : null;
+    },
+  });
+
+  const syncMutation = useMutation({
+    mutationFn: async (userData: User | null) => {
+      if (userData) {
+        await AsyncStorage.setItem(USER_STORAGE_KEY, JSON.stringify(userData));
+      } else {
+        await AsyncStorage.removeItem(USER_STORAGE_KEY);
+      }
+      return userData;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user'] });
+    },
+  });
+
+  const { mutate: syncUser } = syncMutation;
+
+  useEffect(() => {
+    if (userQuery.data !== undefined) {
+      setUser(userQuery.data);
+    }
+  }, [userQuery.data]);
+
+  const signIn = useCallback(
+    (email: string, password: string) => {
+      const mockUser: User = {
+        id: '1',
+        name: 'John Doe',
+        email,
+        phone: '+91 98765 43210',
+        addresses: [],
+      };
+      setUser(mockUser);
+      syncUser(mockUser);
+    },
+    [syncUser],
+  );
+
+  const signUp = useCallback(
+    (name: string, email: string, password: string) => {
+      const mockUser: User = {
+        id: '1',
+        name,
+        email,
+        addresses: [],
+      };
+      setUser(mockUser);
+      syncUser(mockUser);
+    },
+    [syncUser],
+  );
+
+  const signOut = useCallback(() => {
+    setUser(null);
+    syncUser(null);
+  }, [syncUser]);
+
+  return {
+    user,
+    signIn,
+    signUp,
+    signOut,
+    isAuthenticated: !!user,
+    isLoading: userQuery.isLoading,
+  };
+});

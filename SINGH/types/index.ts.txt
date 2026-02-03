@@ -1,0 +1,66 @@
+export type Season = 'summer' | 'winter' | 'monsoon' | 'festive';
+
+export type Category = 
+  | 't-shirts' 
+  | 'shirts' 
+  | 'polos' 
+  | 'shorts'
+  | 'hoodies' 
+  | 'jackets' 
+  | 'sweaters'
+  | 'track-pants'
+  | 'kurtas'
+  | 'blazers';
+
+export type Size = 'S' | 'M' | 'L' | 'XL' | 'XXL';
+
+export interface Product {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  discount?: number;
+  images: string[];
+  sizes: Size[];
+  colors: string[];
+  season: Season;
+  category: Category;
+  stock: number;
+  featured?: boolean;
+}
+
+export interface CartItem {
+  product: Product;
+  size: Size;
+  color: string;
+  quantity: number;
+}
+
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  addresses: Address[];
+}
+
+export interface Address {
+  id: string;
+  line1: string;
+  line2?: string;
+  city: string;
+  state: string;
+  pincode: string;
+  isDefault: boolean;
+}
+
+export interface Order {
+  id: string;
+  userId: string;
+  items: CartItem[];
+  total: number;
+  status: 'pending' | 'paid' | 'shipped' | 'delivered';
+  address: Address;
+  createdAt: Date;
+  paymentId?: string;
+}

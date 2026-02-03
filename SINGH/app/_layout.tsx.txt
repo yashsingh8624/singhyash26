@@ -1,0 +1,63 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Stack } from "expo-router";
+import * as SplashScreen from "expo-splash-screen";
+import React, { useEffect } from "react";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+
+import { AuthContext } from "@/contexts/AuthContext";
+import { CartContext } from "@/contexts/CartContext";
+
+SplashScreen.preventAutoHideAsync();
+
+const queryClient = new QueryClient();
+
+function RootLayoutNav() {
+  return (
+    <Stack screenOptions={{ headerBackTitle: "Back" }}>
+      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen 
+        name="product/[id]" 
+        options={{ 
+          headerShown: true,
+          title: 'Product Details',
+          headerStyle: { backgroundColor: '#FFFFFF' },
+          headerTintColor: '#1A1A1A',
+        }} 
+      />
+      <Stack.Screen 
+        name="auth/signin" 
+        options={{ 
+          presentation: 'modal',
+          headerShown: true,
+          title: 'Sign In',
+        }} 
+      />
+      <Stack.Screen 
+        name="auth/signup" 
+        options={{ 
+          presentation: 'modal',
+          headerShown: true,
+          title: 'Sign Up',
+        }} 
+      />
+    </Stack>
+  );
+}
+
+export default function RootLayout() {
+  useEffect(() => {
+    SplashScreen.hideAsync();
+  }, []);
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AuthContext>
+        <CartContext>
+          <GestureHandlerRootView>
+            <RootLayoutNav />
+          </GestureHandlerRootView>
+        </CartContext>
+      </AuthContext>
+    </QueryClientProvider>
+  );
+}
